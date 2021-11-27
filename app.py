@@ -17,7 +17,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String)
     last_name = db.Column(db.String)
-    age = db.Column(db.String)
+    age = db.Column(db.Integer)
     email = db.Column(db.String)
     role = db.Column(db.String)
     phone = db.Column(db.String)
@@ -40,7 +40,7 @@ class Order(db.Model):
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
     address = db.Column(db.String)
-    price = db.Column(db.String)
+    price = db.Column(db.Integer)
     customer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     executor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
@@ -67,6 +67,7 @@ class Offer(db.Model):
                 "executor_id":self.executor_id
                 }
 
+
 db.drop_all()
 db.create_all()
 db.session.commit()
@@ -79,42 +80,30 @@ db.session.commit()
 def users():
     if request.method =='GET':
         response_users = []
-        users = db.session.query(User).all()
-        if users:
-            for user in users:
-                response_users.append(user.to_dict())
+        for user in db.session.query(User).all():
+            response_users.append(user.to_dict())
         return jsonify(response_users)
     if request.method == 'POST':
         data = request.json
-        if set(data.keys()).issubset(set(User.metadata.tables['users'].columns.keys())):
-            user_to_add = User(first_name=data["first_name"],
-                                last_name=data["last_name"],
-                                age=data["age"],
-                                email=data["email"],
-                                role=data["role"],
-                                phone=data["phone"]
-                                )
-            try:
-                db.session.add(user_to_add)
-                db.session.commit()
-            except:
-                return 'Ошибка добавления', 418
-            return "User добавлен", 200
-        return 'Unprocessable Entity', 422
+        try:
+            user_to_add = User(**data)
+            db.session.add(user_to_add)
+            db.session.commit()
+        except:
+            return 'Ошибка добавления', 400
+        return "User добавлен", 200
 
 
 @app.route('/users/<int:id>', methods = ['GET', 'PUT', 'DELETE'])
 def users_by_id(id:int):
     if request.method =='GET':
         response_users = []
-        users = db.session.query(User).filter(User.id==id).all()
-        if users:
-            for user in users:
-                response_users.append(user.to_dict())
+        for user in db.session.query(User).filter(User.id==id).all():
+            response_users.append(user.to_dict())
         return jsonify(response_users)
     if request.method == 'PUT':
         data = request.json
-        if set(data.keys()).issubset(set(User.metadata.tables['users'].columns.keys())):
+        try:
             user=db.session.query(User).get(id)
             user.first_name=data["first_name"]
             user.last_name=data["last_name"]
@@ -122,13 +111,11 @@ def users_by_id(id:int):
             user.email=data["email"]
             user.role=data["role"]
             user.phone=data["phone"]
-            try:
-                db.session.add(user)
-                db.session.commit()
-            except:
-                return 'Ошибка изменения', 418
-            return "User изменен", 200
-        return 'Unprocessable Entity', 422
+            db.session.add(user)
+            db.session.commit()
+        except:
+            return 'Ошибка изменения', 400
+        return "User изменен", 200
     if request.method == 'DELETE':
         try:
             user = db.session.query(User).get(id)
@@ -151,36 +138,24 @@ def orders():
         return jsonify(response_orders)
     if request.method == 'POST':
         data = request.json
-        if set(data.keys()).issubset(set(Order.metadata.tables['orders'].columns.keys())):
-            order_to_add = Order(name=data["name"],
-                                 description=data["description"],
-                                 start_date=datetime.strptime(data["start_date"].replace("/", "-"),"%m-%d-%Y"),
-                                 end_date=datetime.strptime(data["end_date"].replace("/", "-"),"%m-%d-%Y"),
-                                 address=data["address"],
-                                 price=data["price"],
-                                 customer_id=data["customer_id"],
-                                 executor_id=data["executor_id"]
-                                )
-            try:
-                db.session.add(order_to_add)
-                db.session.commit()
-            except:
-                return 'Ошибка добавления', 418
-            return "order добавлен", 200
-        return 'Unprocessable Entity', 422
+        try:
+            order_to_add = Order(**data)
+            db.session.add(order_to_add)
+            db.session.commit()
+        except:
+            return 'Ошибка добавления', 400
+        return "order добавлен", 200
 
 @app.route('/orders/<int:id>', methods = ['GET', 'PUT', 'DELETE'])
 def orders_by_id(id:int):
     if request.method == 'GET':
         response_orders = []
-        orders = db.session.query(Order).filter(Order.id==id).all()
-        if orders:
-            for order in orders:
-                response_orders.append(order.to_dict())
+        for order in  db.session.query(Order).filter(Order.id==id).all():
+            response_orders.append(order.to_dict())
         return jsonify(response_orders)
     if request.method == 'PUT':
         data = request.json
-        if set(data.keys()).issubset(set(Order.metadata.tables['orders'].columns.keys())):
+        try:
             order=db.session.query(Order).get(id)
             order.name=data["name"]
             order.description=data["description"]
@@ -190,13 +165,11 @@ def orders_by_id(id:int):
             order.price=data["price"]
             order.customer_id = data["customer_id"]
             order.executor_id = data["executor_id"]
-            try:
-                db.session.add(order)
-                db.session.commit()
-            except:
-                return 'Ошибка изменения', 418
-            return "order изменен", 200
-        return 'Unprocessable Entity', 422
+            db.session.add(order)
+            db.session.commit()
+        except:
+            return 'Ошибка изменения', 400
+        return "order изменен", 200
     if request.method == 'DELETE':
         try:
             order = db.session.query(Order).get(id)
@@ -210,48 +183,38 @@ def orders_by_id(id:int):
 def offers():
     if request.method == 'GET':
         response_offers = []
-        offers = db.session.query(Offer).all()
-        if offers:
-            for offer in offers:
-                response_offers.append(offer.to_dict())
+        for offer in db.session.query(Offer).all():
+            response_offers.append(offer.to_dict())
         return jsonify(response_offers)
     if request.method == 'POST':
         data = request.json
-        if set(data.keys()).issubset(set(Offer.metadata.tables['offers'].columns.keys())):
-            offer_to_add = Offer(order_id=offer["order_id"],
-                                 executor_id=offer["executor_id"]
-                                )
-            try:
-                db.session.add(offer_to_add)
-                db.session.commit()
-            except:
-                return 'Ошибка добавления', 418
-            return "offer добавлен", 200
-        return 'Unprocessable Entity', 422
+        try:
+            offer_to_add = Offer(**data)
+            db.session.add(offer_to_add)
+            db.session.commit()
+        except:
+            return 'Ошибка добавления', 400
+        return "offer добавлен", 200
 
 
 @app.route('/offers/<int:id>', methods = ['GET', 'PUT', 'DELETE'])
 def offers_by_id(id:int):
     if request.method == 'GET':
         response_offers = []
-        offers = db.session.query(Offer).filter(Offer.id==id).all()
-        if offers:
-            for offer in offers:
-                response_offers.append(offer.to_dict())
+        for offer in db.session.query(Offer).filter(Offer.id==id).all():
+            response_offers.append(offer.to_dict())
         return jsonify(response_offers)
     if request.method == 'PUT':
         data = request.json
-        if set(data.keys()).issubset(set(Offer.metadata.tables['offers'].columns.keys())):
+        try:
             offer=db.session.query(Offer).get(id)
             offer.order_id=data["order_id"]
             offer.executor_id=data["executor_id"]
-            try:
-                db.session.add(offer)
-                db.session.commit()
-            except:
-                return 'Ошибка изменения', 418
-            return "offer изменен", 200
-        return 'Unprocessable Entity', 422
+            db.session.add(offer)
+            db.session.commit()
+        except:
+            return 'Ошибка изменения', 400
+        return "offer изменен", 200
     if request.method == 'DELETE':
         try:
             offer = db.session.query(Offer).get(id)
