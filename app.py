@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 import utils
 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///homework.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -9,7 +10,6 @@ app.config['JSON_AS_ASCII'] = False
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.config['JSON_SORT_KEYS'] = False
 db = SQLAlchemy(app)
-
 
 
 class User(db.Model):
@@ -31,6 +31,7 @@ class User(db.Model):
                 "role":self.role,
                 "phone":self.phone
                 }
+
 
 class Order(db.Model):
     __tablename__ = 'orders'
@@ -54,6 +55,7 @@ class Order(db.Model):
                 "price":self.price ,
                 "customer_id":self.customer_id ,
                 "executor_id":self.executor_id}
+
 
 class Offer(db.Model):
     __tablename__ = 'offers'
@@ -103,19 +105,11 @@ def users_by_id(id:int):
         return jsonify(response_users)
     if request.method == 'PUT':
         data = request.json
-        try:
-            user=db.session.query(User).get(id)
-            user.first_name=data["first_name"]
-            user.last_name=data["last_name"]
-            user.age=data["age"]
-            user.email=data["email"]
-            user.role=data["role"]
-            user.phone=data["phone"]
-            db.session.add(user)
+        if set(data.keys())==(set(User.metadata.tables['users'].columns.keys())):
+            db.session.query(User).filter(User.id == id).update(data)
             db.session.commit()
-        except:
-            return 'Ошибка изменения', 400
-        return "User изменен", 200
+            return "User изменен", 200
+        return 'Ошибка изменения', 400
     if request.method == 'DELETE':
         try:
             user = db.session.query(User).get(id)
@@ -124,7 +118,6 @@ def users_by_id(id:int):
             return "User удален", 200
         except Exception as e:
             return f'Ошибка: "{e}"',404
-
 
 
 @app.route('/orders', methods = ['GET', 'POST'])
@@ -146,6 +139,7 @@ def orders():
             return 'Ошибка добавления', 400
         return "order добавлен", 200
 
+
 @app.route('/orders/<int:id>', methods = ['GET', 'PUT', 'DELETE'])
 def orders_by_id(id:int):
     if request.method == 'GET':
@@ -155,21 +149,11 @@ def orders_by_id(id:int):
         return jsonify(response_orders)
     if request.method == 'PUT':
         data = request.json
-        try:
-            order=db.session.query(Order).get(id)
-            order.name=data["name"]
-            order.description=data["description"]
-            order.start_date=data["start_date"]
-            order.end_date=data["end_date"]
-            order.address=data["address"]
-            order.price=data["price"]
-            order.customer_id = data["customer_id"]
-            order.executor_id = data["executor_id"]
-            db.session.add(order)
+        if set(data.keys()) == (set(Offer.metadata.tables['orders'].columns.keys())):
+            db.session.query(Order).filter(User.id == id).update(data)
             db.session.commit()
-        except:
-            return 'Ошибка изменения', 400
-        return "order изменен", 200
+            return "Order изменен", 200
+        return 'Ошибка изменения', 400
     if request.method == 'DELETE':
         try:
             order = db.session.query(Order).get(id)
@@ -178,6 +162,7 @@ def orders_by_id(id:int):
             return "order удален", 200
         except Exception as e:
             return f'Ошибка: "{e}"',404
+
 
 @app.route('/offers', methods = ['GET', 'POST'])
 def offers():
@@ -206,15 +191,11 @@ def offers_by_id(id:int):
         return jsonify(response_offers)
     if request.method == 'PUT':
         data = request.json
-        try:
-            offer=db.session.query(Offer).get(id)
-            offer.order_id=data["order_id"]
-            offer.executor_id=data["executor_id"]
-            db.session.add(offer)
+        if set(data.keys()) == (set(Offer.metadata.tables['offers'].columns.keys())):
+            db.session.query(Offer).filter(User.id == id).update(data)
             db.session.commit()
-        except:
-            return 'Ошибка изменения', 400
-        return "offer изменен", 200
+            return "Offer изменен", 200
+        return 'Ошибка изменения', 400
     if request.method == 'DELETE':
         try:
             offer = db.session.query(Offer).get(id)
